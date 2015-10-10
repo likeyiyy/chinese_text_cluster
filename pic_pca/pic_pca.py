@@ -66,13 +66,17 @@ def del_imaginary(reconMat):
 
 if __name__ == "__main__":
     imgMat = LoadPicture(sys.argv[1])
-    varPercentage,index = pca_analyize(imgMat,int(sys.argv[2]))
-    print index
-    #pca_viewer(varPercentage)
-    lowImgMat, reconMat = pca(imgMat,index)
-    realMat = del_imaginary(reconMat)
-    plt.gray()
-    plt.imshow(realMat)
+    plt.subplot(2,3,1)
+    threshold = [20,50,80,90,95,99]
+    for i in range(len(threshold)):
+        varPercentage,index = pca_analyize(imgMat,threshold[i])
+        print index
+        #pca_viewer(varPercentage)
+        lowImgMat, reconMat = pca(imgMat,index)
+        realMat = del_imaginary(reconMat)
+        plt.gray()
+        plt.subplot(2,3,i+1)
+        plt.imshow(realMat)
     plt.show()
 
 
