@@ -3,19 +3,37 @@
 
 from PIL import Image
 from numpy import *
+import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
 def LoadPicture(name):
     img = Image.open(name)
+    m,n = img.size
     img = img.convert("L")
+    realMat = array(img)
     #print img.mode,imgMat.shape
     #plt.gray()
     #plt.imshow(imgMat)
     #plt.show()
-    imgMat = matrix(img)
-    #print imgMat
+    imgMat = realMat
     return imgMat
+
+
+def LoadImage(file):
+    img = Image.open(file)
+    m,n = img.size
+    imgArray = np.array(img)
+    a = np.zeros([n,m],np.uint32)
+    for i in range(n):
+        for j in range(m):
+            temp = np.uint32(imgArray[i,j][2])
+            temp = (temp << 8) | imgArray[i,j][1]
+            temp = (temp << 8) | imgArray[i,j][0]
+            a[i,j] = temp
+    return a
+
+
 
 def pca(dataMat, topNfeat=9999999):
     meanVals = mean(dataMat, axis=0)
@@ -39,7 +57,7 @@ def pca_analyize(dataMat,threshold):
     sortedEigVals = eigVals[eigValInd]
     total = sum(sortedEigVals)
     varPercentage = sortedEigVals/total*100
-    count = 0
+    count = 0.0
     index = 0
     for per in varPercentage:
         index += 1
@@ -58,25 +76,39 @@ def pca_viewer(varPercentage):
 
 def del_imaginary(reconMat):
     m,n = reconMat.shape[:2]
-    realMat = matrix(zeros([m,n]))
+    realMat = matrix(zeros([m,n]),np.uint32)
     for i in range(m):
         for j in range(n):
-            realMat[i,j] = reconMat[i,j].real
+            realMat[i,j] = np.uint32(reconMat[i,j].real)
     return realMat
 
+def GeneratorImage(imgArray):
+    m,n = imgArray.shape
+    a = np.zeros([m,n,3],np.uint8)
+    for i in range(m):
+        for j in range(n):
+            n0 = (imgArray[i,j]) & 0xff
+            n1 = ((imgArray[i,j]) >> 8) & 0xff
+            n2 = ((imgArray[i,j]) >> 16) & 0xff
+            a[i,j] = np.array([n0,n1,n2])
+    return a
+    img = Image.fromarray(a,"RGB")
+    return img
+
 if __name__ == "__main__":
-    imgMat = LoadPicture(sys.argv[1])
+    imgMat = LoadImage(sys.argv[1])
     plt.subplot(2,3,1)
-    threshold = [20,50,80,90,95,99]
+    threshold = [1,30,50,100,164,165]
     for i in range(len(threshold)):
-        varPercentage,index = pca_analyize(imgMat,threshold[i])
-        print index
+        #varPercentage,index = pca_analyize(imgMat,threshold[i])
+        #print index
         #pca_viewer(varPercentage)
-        lowImgMat, reconMat = pca(imgMat,index)
+        lowImgMat, reconMat = pca(imgMat,threshold[i])
         realMat = del_imaginary(reconMat)
-        plt.gray()
+        img = GeneratorImage(realMat)
         plt.subplot(2,3,i+1)
-        plt.imshow(realMat)
+        plt.gray()
+        plt.imshow(img)
     plt.show()
 
 
